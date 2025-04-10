@@ -3,15 +3,20 @@ using OpenTK.Mathematics;
 
 public class Renderer {
 
+    private readonly List<Model> Models = new();
     private readonly List<Camera> Cameras = new();
 
     public Camera ActiveCamera {get; private set;}
+    
+    public void AddModel(Model model) {Models.Add(model);}
 
     public Renderer(int width, int height) {
         GL.ClearColor(0.1f, 0.2f, 0.2f, 1.0f);
         GL.Enable(EnableCap.DepthTest);
-        Camera camera = new Camera(Vector3.UnitZ, width / (float)height);
+        Camera camera = new Camera(Vector3.UnitZ*2, width / (float)height);
         AddCamera(camera);
+        
+        Models.Add(ResourceManager.LoadModel("Resources/Models/cube/cube.obj"));
     }
 
     public void AddCamera(Camera camera) {
@@ -24,6 +29,19 @@ public class Renderer {
 
     public void ClearScreen() {
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+    }
+
+    public void RenderScene(Shader shader) {
+        ClearScreen();
+        shader.Use();
+        
+        shader.SetMatrix4("projection_from_view", ActiveCamera.GetProjectionMatrix());
+        shader.SetMatrix4("view_from_world", ActiveCamera.GetViewMatrix());     
+
+        foreach (Model model in Models) {               
+            shader.SetMatrix4("world_from_object", Matrix4.Identity);
+            model.Draw();
+        }
     }
 
     public void RenderMesh(Mesh mesh, Shader shader) {
