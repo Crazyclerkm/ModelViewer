@@ -84,6 +84,27 @@ namespace ModelViewer.Core {
 
             // Window controls
             if (input.IsKeyDown(Keys.Escape)) Close();
+
+            // Movement controls
+            if (input.IsKeyDown(Keys.W)) renderer.ActiveCamera.Move(CameraMovement.FORWARD, (float)e.Time);
+            if (input.IsKeyDown(Keys.S)) renderer.ActiveCamera.Move(CameraMovement.BACKWARD, (float)e.Time);
+            if (input.IsKeyDown(Keys.A)) renderer.ActiveCamera.Move(CameraMovement.LEFT, (float)e.Time);
+            if (input.IsKeyDown(Keys.D)) renderer.ActiveCamera.Move(CameraMovement.RIGHT, (float)e.Time);
+            if (input.IsKeyDown(Keys.Space)) renderer.ActiveCamera.Move(CameraMovement.UP, (float)e.Time);
+            if (input.IsKeyDown(Keys.LeftShift)) renderer.ActiveCamera.Move(CameraMovement.DOWN, (float)e.Time);
+        }
+
+        protected override void OnMouseMove(MouseMoveEventArgs e) {
+            base.OnMouseMove(e);
+
+            if(IsFocused) {
+                renderer.ActiveCamera.Rotate(e.DeltaX, e.DeltaY);
+            }
+        }
+
+        protected override void OnMouseWheel(MouseWheelEventArgs e) {
+            base.OnMouseWheel(e);
+            renderer.ActiveCamera.Zoom(e.OffsetY);
         }
     }
 }
