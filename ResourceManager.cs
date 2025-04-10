@@ -48,7 +48,6 @@ public static class ResourceManager {
     private static IModelImporter GetImporter(string extension) {
         return extension switch {
             ".obj" => new ObjImporter(),
-            ".nif" => new NifImporter(),
             _ => throw new NotSupportedException($"Unsupported file format: {extension}")
         };
     }
