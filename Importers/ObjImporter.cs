@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using OpenTK.Mathematics;
 
 public class ObjImporter : IModelImporter {
@@ -10,19 +9,8 @@ public class ObjImporter : IModelImporter {
 
     }
 
-    private class Material {
-        public string Name;
-
-        public Texture DiffuseTexture;
-
-        public Material(string name) {
-            Name = name;
-        }
-    }
-
     public Model LoadModel(string filePath) {
         List<Mesh> meshes = [];
-        List<Texture> textures = [];
 
         List<Vector3> positions = [];
         List<Vector2> texCoords = [];
@@ -76,13 +64,15 @@ public class ObjImporter : IModelImporter {
                 }
                 case "mtllib": {
                     // Doesn't support spaces in material library name
-                    Dictionary<string, Material> loadedMaterials = LoadMaterialLib(baseDir, tokens[1]);
 
-                    foreach (var name in loadedMaterials.Keys) {
-                        Material material =  loadedMaterials[name];  
-                        materials[name] = material;
+                    if (baseDir != null) {
+                        Dictionary<string, Material> loadedMaterials = LoadMaterialLib(baseDir, tokens[1]);
+
+                        foreach (var name in loadedMaterials.Keys) {
+                            Material material =  loadedMaterials[name];  
+                            materials[name] = material;
+                        }
                     }
-
                     break;
                 }
                 case "usemtl": {
@@ -95,17 +85,16 @@ public class ObjImporter : IModelImporter {
 
         meshes.Add(CreateMesh(positions, texCoords, normals, faces, currentMaterial));
 
-        Model model = new Model(filePath, meshes, textures);
+        Model model = new Model(meshes);
 
         return model;
     }
 
-    private Mesh CreateMesh(List<Vector3> positions, List<Vector2> texCoords, List<Vector3> normals, List<Face> faces, Material material) {
+    private Mesh CreateMesh(List<Vector3> positions, List<Vector2> texCoords, List<Vector3> normals, List<Face> faces, Material? material) {
         List<Vertex> vertices = [];
         List<uint> indices = [];
-        List<Texture> textures = [];
-
-        textures.Add(material.DiffuseTexture);
+        
+        Material meshMaterial = material ?? new Material("default");
 
         foreach (var face in faces) {
             for (int i = 0; i < face.PositionIndices.Count; i++) {
@@ -131,7 +120,7 @@ public class ObjImporter : IModelImporter {
             }
         }
 
-        return new Mesh(vertices, indices, textures);
+        return new Mesh(vertices, indices, meshMaterial);
     }
 
     private Vector3 ParseVec3(string[] tokens) {
@@ -145,7 +134,6 @@ public class ObjImporter : IModelImporter {
     private Vector2 ParseTexCoord(string[] tokens) {
         float u = float.Parse(tokens[0]);
         float v = tokens.Length > 1 ? 1.0f-float.Parse(tokens[1]) : 0.0f;
-        //float w = tokens.Length > 2 ? float.Parse(tokens[2]) : 0.0f;
 
         return new Vector2(u, v);
     }
@@ -197,12 +185,64 @@ public class ObjImporter : IModelImporter {
                     currentMaterial = new Material(tokens[1]);
                     break;
                 }
+                case "Ka": {
+
+                    if (currentMaterial != null) {
+                        currentMaterial.AmbientColour = ParseVec3([.. tokens.Skip(1)]);
+                    }
+
+                    break;
+                }
+                case "Kd": {
+                    if (currentMaterial != null) {
+                        currentMaterial.DiffuseColour = ParseVec3([.. tokens.Skip(1)]);
+                    }
+
+                    break;
+                }
+                case "Ks": {
+                    if (currentMaterial != null) {
+                        currentMaterial.SpecularColour = ParseVec3([.. tokens.Skip(1)]);
+                    }
+
+                    break;
+                }
+                case "Ns": {
+                    if (currentMaterial != null) {
+                        currentMaterial.SpecularExponent = float.Parse(tokens[1]);
+                    }
+
+                    break;
+                }
+                case "Ni": {
+                    if (currentMaterial != null) {
+                        currentMaterial.OpticalDensity = float.Parse(tokens[1]);
+                    }
+
+                    break;
+                }
                 case "map_Kd": {
-                    Debug.Assert(currentMaterial != null);
-                    currentMaterial.DiffuseTexture = ResourceManager.LoadTexture(Path.Combine(baseDir, tokens[1]));
+
+                    if (currentMaterial != null) {
+                        currentMaterial.DiffuseTexture = ResourceManager.LoadTexture(Path.Combine(baseDir, tokens[1]));
+                    }
+
                     break;
                 }
                 case "map_Ks": {
+
+                    if (currentMaterial != null) {
+                        currentMaterial.SpecularColourTexture = ResourceManager.LoadTexture(Path.Combine(baseDir, tokens[1]));
+                    }
+
+                    break;
+                }
+                case "map_Ns": {
+
+                    if (currentMaterial != null) {
+                        currentMaterial.SpecularHighlightTexture = ResourceManager.LoadTexture(Path.Combine(baseDir, tokens[1]));
+                    }
+
                     break;
                 }
             }

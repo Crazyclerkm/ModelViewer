@@ -20,16 +20,17 @@ public class Mesh {
 
     private List<Vertex> Vertices;
     private List<uint> Indices;
-    private List<Texture> Textures;
+
+    public Material? Material;
 
     private int VAO;
     private int VBO;
     private int EBO;
 
-    public Mesh(List<Vertex> vertices, List<uint> indices, List<Texture> textures) {
+    public Mesh(List<Vertex> vertices, List<uint> indices, Material? material) {
         Vertices = vertices;
         Indices = indices;
-        Textures = textures;
+        Material = material;
 
         SetupMesh();
     }
@@ -37,17 +38,19 @@ public class Mesh {
     public Mesh() {
         Vertices = [];
         Indices = [];
-        Textures = [];
     }
 
     public void Draw() {
-        foreach (var texture in Textures) {
-            texture.Use(TextureUnit.Texture0);
-        }
+        Material?.DiffuseTexture?.Use(TextureUnit.Texture0);
+        Material?.SpecularColourTexture?.Use(TextureUnit.Texture1);
+        Material?.SpecularHighlightTexture?.Use(TextureUnit.Texture2);
 
         GL.BindVertexArray(VAO);
         GL.DrawElements(PrimitiveType.Triangles, Indices.Count, DrawElementsType.UnsignedInt, 0);
+        
         GL.BindVertexArray(0);
+        GL.BindTexture(TextureTarget.Texture2D, 0);
+        GL.ActiveTexture(0);
     }
 
     public void SetupMesh() {

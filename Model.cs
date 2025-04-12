@@ -1,18 +1,14 @@
+using OpenTK.Mathematics;
+
 public class Model {
 
-    private List<Mesh> Meshes;
-    private List<Texture> Textures;
-    private readonly string FilePath;
+    public List<Mesh> Meshes;
 
-    public Model(string filePath, List<Mesh> meshes, List<Texture> textures) {
-        FilePath = filePath;
+    public Model(List<Mesh> meshes) {
         Meshes = meshes;
-        Textures = textures;
     }
 
-    public void Draw() {
-        foreach (Mesh mesh in Meshes) {   
-            mesh.Draw();
-        }
+    public Matrix4 GetModelMatrix() {
+        return Matrix4.Identity;
     }
 }

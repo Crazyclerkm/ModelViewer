@@ -7,7 +7,7 @@ public static class ResourceManager {
     private static readonly Dictionary<string, Texture> textures = new();
 
     public static Model LoadModel(string filePath) {
-        if(models.TryGetValue(filePath, out Model cachedModel)) {
+        if(models.TryGetValue(filePath, out Model? cachedModel)) {
             return cachedModel;
         }
         
@@ -20,7 +20,7 @@ public static class ResourceManager {
     }
 
     public static Shader LoadShader(string name, string vertexPath, string fragmentPath) {
-        if(shaders.TryGetValue(name, out Shader cachedShader)) {
+        if(shaders.TryGetValue(name, out Shader? cachedShader)) {
             return cachedShader;
         }
         
@@ -36,7 +36,7 @@ public static class ResourceManager {
     }
 
     public static Texture LoadTexture(string filePath) {
-        if(textures.TryGetValue(filePath, out Texture cachedTexture)) {
+        if(textures.TryGetValue(filePath, out Texture? cachedTexture)) {
             return cachedTexture;
         }
         

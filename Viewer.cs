@@ -5,15 +5,13 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 namespace ModelViewer.Core {
     public class Viewer : GameWindow {
 
-        private Renderer renderer;
-        private Shader shader;
+        private readonly Renderer renderer;
 
         public Viewer(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() {
             ClientSize = (width, height),
             Title = title
         }) { 
             renderer = new Renderer(0,0);
-            shader = ResourceManager.LoadShader("basic", "Resources/Shaders/basicShader.vs", "Resources/Shaders/basicShader.fs");
         }
 
         static void Main() {
@@ -33,7 +31,7 @@ namespace ModelViewer.Core {
         protected override void OnRenderFrame(FrameEventArgs e) {
             base.OnRenderFrame(e);
             
-           renderer.RenderScene(shader);
+           renderer.RenderScene();
 
             SwapBuffers();
         }
