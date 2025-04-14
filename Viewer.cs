@@ -51,6 +51,7 @@ namespace ModelViewer.Core {
             base.OnFramebufferResize(e);
 
             renderer.ResizeViewport(e.Width, e.Height);
+            GuiController.WindowResized(e.Width, e.Height);
         }
 
         private void ProcessInput(FrameEventArgs e) {

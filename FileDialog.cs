@@ -2,14 +2,14 @@ using ImGuiNET;
 
 public class FileDialog {
 
-    private string currentPath = Directory.GetCurrentDirectory();
+    private string currentPath = Path.Combine(Directory.GetCurrentDirectory(), "Resources");
     private string? selectedFile = null;
     private bool open = false;
     private Action<string>? fileSelected;
 
-    private readonly string[] SupportedExtensions = {
+    private readonly string[] SupportedExtensions = [
         ".obj"
-    };
+    ];
 
     public void Show(Action<object> fileSelectedCallback) {
         open = true;

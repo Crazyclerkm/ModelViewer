@@ -152,19 +152,19 @@ public class ImGuiController {
 
             for (int cmd_n = 0; cmd_n < cmdList.CmdBuffer.Size; cmd_n++) {
                 ImDrawCmdPtr pcmd = cmdList.CmdBuffer[cmd_n];
-
                 
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, (int)pcmd.TextureId);
 
                 var clip = pcmd.ClipRect;
-                //GL.Scissor((int)clip.X, WindowHeight - (int)clip.W, (int)(clip.Z - clip.X), (int)(clip.W - clip.Y));
+                GL.Scissor((int)clip.X, WindowHeight - (int)clip.W, (int)(clip.Z - clip.X), (int)(clip.W - clip.Y));
 
                 GL.DrawElements(BeginMode.Triangles, (int)pcmd.ElemCount, DrawElementsType.UnsignedShort, (int)pcmd.IdxOffset * sizeof(ushort));
             }
         }
         
         // Cleanup
+        GL.Disable(EnableCap.ScissorTest);
         GL.Enable(EnableCap.DepthTest);
         GL.BindVertexArray(0);
         GL.UseProgram(0);
