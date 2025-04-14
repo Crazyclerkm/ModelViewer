@@ -7,6 +7,7 @@ public class Renderer {
     private readonly List<Camera> Cameras = [];
 
     private Shader DefaultShader = ResourceManager.LoadShader("Default", "Resources/Shaders/basicShader.vs", "Resources/Shaders/basicShader.fs");
+    private Shader UIShader = ResourceManager.LoadShader("UI", "Resources/Shaders/UIShader.vs", "Resources/Shaders/UIShader.fs");
 
     public Camera ActiveCamera {get; private set;}
     
@@ -20,12 +21,14 @@ public class Renderer {
         Camera camera = new Camera(Vector3.UnitZ*2, width / (float)height);
         AddCamera(camera);
         ActiveCamera = camera;
-        
-        Models.Add(ResourceManager.LoadModel("Resources/Models/cube/cube.obj"));
     }
     
     public static void ClearScreen() {
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+    }
+
+    public void RenderUI(ImGuiController imGuiController) {
+        imGuiController.Draw(UIShader);
     }
 
     public void RenderScene() {
@@ -47,6 +50,7 @@ public class Renderer {
                 mesh.Draw();
             }
         }
+        GL.UseProgram(0);
     }
 
     public static void Unload() {
