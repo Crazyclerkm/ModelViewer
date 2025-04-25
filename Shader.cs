@@ -47,7 +47,6 @@ enum GL_OBJECT_TYPE {
 
     public int GetAttribLocation(string attribName) {
         int atrribLocation = GL.GetAttribLocation(Handle, attribName);
-        Console.WriteLine("Attrib location: " + atrribLocation);
         return atrribLocation;
     }
 
@@ -59,6 +58,11 @@ enum GL_OBJECT_TYPE {
     public void SetMatrix4(string name, Matrix4 data) {
         GL.UseProgram(Handle);
         GL.UniformMatrix4(GL.GetUniformLocation(Handle, name), false, ref data);
+    }
+
+    public void SetVec3(string name, Vector3 data) {
+        GL.UseProgram(Handle);
+        GL.Uniform3(GL.GetUniformLocation(Handle, name), data.X, data.Y, data.Z);
     }
 
     private void CheckCompileErrors(int objectID, GL_OBJECT_TYPE type) {

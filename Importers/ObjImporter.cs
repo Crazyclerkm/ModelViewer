@@ -85,7 +85,7 @@ public class ObjImporter : IModelImporter {
 
         meshes.Add(CreateMesh(positions, texCoords, normals, faces, currentMaterial));
 
-        Model model = new Model(meshes);
+        Model model = new Model(meshes, Path.GetFileNameWithoutExtension(filePath));
 
         return model;
     }

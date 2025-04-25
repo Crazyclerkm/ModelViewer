@@ -23,6 +23,9 @@ public class Mesh {
 
     public Material? Material;
 
+    public Vector3 AABBmin {get; private set;}
+    public Vector3 AABBmax {get; private set;}
+
     private int VAO;
     private int VBO;
     private int EBO;
@@ -33,6 +36,7 @@ public class Mesh {
         Material = material;
 
         SetupMesh();
+        ComputeAABB();
     }
 
     public Mesh() {
@@ -81,6 +85,19 @@ public class Mesh {
         GL.VertexAttribPointer(textureLocation, 2, VertexAttribPointerType.Float, false, Vertex.SizeInBytes, Marshal.OffsetOf<Vertex>(nameof(Vertex.TexCoords)));
 
         GL.BindVertexArray(0);
+    }
+
+    private void ComputeAABB() {
+        Vector3 min = new Vector3(float.MaxValue);
+        Vector3 max = new Vector3(float.MinValue);
+
+        foreach (var vertex in Vertices) {
+            min = Vector3.ComponentMin(min, vertex.Position);
+            max = Vector3.ComponentMax(max, vertex.Position);
+        }
+
+        AABBmin = min;
+        AABBmax = max;
     }
 
     ~Mesh() {

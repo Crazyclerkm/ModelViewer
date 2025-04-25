@@ -1,4 +1,5 @@
 ﻿using ImGuiNET;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -69,7 +70,19 @@ namespace ModelViewer.Core {
                 if (input.IsKeyDown(Keys.A)) renderer.ActiveCamera.Move(CameraMovement.LEFT, (float)e.Time);
                 if (input.IsKeyDown(Keys.D)) renderer.ActiveCamera.Move(CameraMovement.RIGHT, (float)e.Time);
                 if (input.IsKeyDown(Keys.Space)) renderer.ActiveCamera.Move(CameraMovement.UP, (float)e.Time);
-                if (input.IsKeyDown(Keys.LeftShift)) renderer.ActiveCamera.Move(CameraMovement.DOWN, (float)e.Time);
+                if (input.IsKeyDown(Keys.LeftShift)) renderer.ActiveCamera.Move(CameraMovement.DOWN, (float)e.Time);  
+                if (input.IsKeyDown(Keys.Right)) renderer.ActiveCamera.Rotate(0.1f, 0.0f); 
+                if (input.IsKeyDown(Keys.Left)) renderer.ActiveCamera.Rotate(-0.1f, 0.0f);
+                if (input.IsKeyDown(Keys.Up)) renderer.ActiveCamera.Rotate(0.0f, -0.1f); 
+                if (input.IsKeyDown(Keys.Down)) renderer.ActiveCamera.Rotate(0.0f, 0.1f);
+
+                if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.R)) {
+                    renderer.ActiveCamera.Position = new Vector3(0.0f, 0.0f, 2.0f);
+                    renderer.ActiveCamera.Pitch = 0.0f;
+                    renderer.ActiveCamera.Yaw = -MathHelper.PiOver2;
+
+                    renderer.ActiveCamera.Rotate(0f, 0f);
+                }
             }
             
         }
@@ -93,6 +106,11 @@ namespace ModelViewer.Core {
         protected override void OnMouseDown(MouseButtonEventArgs e) {
             base.OnMouseDown(e);
             GuiController.OnMouseDown(e);
+
+            ImGuiIOPtr io = ImGui.GetIO();
+            if (!io.WantCaptureMouse && IsFocused && e.Button == MouseButton.Button1) {
+                Model? selectedModel = renderer.SelectModel(MouseState.X, MouseState.Y);
+            }
         }
 
         protected override void OnMouseUp(MouseButtonEventArgs e) {
