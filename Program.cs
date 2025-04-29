@@ -21,7 +21,7 @@ public class Viewer : GameWindow {
         ViewRenderer = new Renderer(width, height);
         UIController = new ImGuiController(width, height);
 
-        UIController.OnModelSelected += AddModel;
+        UIController.OnModelLoaded += AddModel;
     }
 
     static void Main() {
@@ -61,13 +61,16 @@ public class Viewer : GameWindow {
     }
 
     private void ProcessInput(FrameEventArgs e) {
+        KeyboardState input = KeyboardState;
+
+        UIController.UpdateKeyboardState(input);
+
         ImGuiIOPtr io = ImGui.GetIO();
+        bool isModalOpen = ImGui.IsPopupOpen("Open File", ImGuiPopupFlags.AnyPopupId);
 
-        if (!io.WantCaptureKeyboard) {
-            KeyboardState input = KeyboardState;
-
+        if (!isModalOpen && !io.WantTextInput) {
             // Window controls
-            if (input.IsKeyDown(Keys.Escape)) Close();
+            if (input.IsKeyDown(Keys.Escape) && !io.WantCaptureKeyboard) Close();
 
             // Movement controls
             if (input.IsKeyDown(Keys.W)) ViewRenderer.ActiveCamera.Move(CameraMovement.FORWARD, (float)e.Time);
@@ -75,11 +78,14 @@ public class Viewer : GameWindow {
             if (input.IsKeyDown(Keys.A)) ViewRenderer.ActiveCamera.Move(CameraMovement.LEFT, (float)e.Time);
             if (input.IsKeyDown(Keys.D)) ViewRenderer.ActiveCamera.Move(CameraMovement.RIGHT, (float)e.Time);
             if (input.IsKeyDown(Keys.Space)) ViewRenderer.ActiveCamera.Move(CameraMovement.UP, (float)e.Time);
-            if (input.IsKeyDown(Keys.LeftShift)) ViewRenderer.ActiveCamera.Move(CameraMovement.DOWN, (float)e.Time);  
-            if (input.IsKeyDown(Keys.Right)) ViewRenderer.ActiveCamera.Rotate(0.1f, 0.0f); 
-            if (input.IsKeyDown(Keys.Left)) ViewRenderer.ActiveCamera.Rotate(-0.1f, 0.0f);
-            if (input.IsKeyDown(Keys.Up)) ViewRenderer.ActiveCamera.Rotate(0.0f, -0.1f); 
-            if (input.IsKeyDown(Keys.Down)) ViewRenderer.ActiveCamera.Rotate(0.0f, 0.1f);
+            if (input.IsKeyDown(Keys.LeftShift)) ViewRenderer.ActiveCamera.Move(CameraMovement.DOWN, (float)e.Time);
+
+            if (!io.WantCaptureKeyboard) {
+                if (input.IsKeyDown(Keys.Right)) ViewRenderer.ActiveCamera.Rotate(0.1f, 0.0f); 
+                if (input.IsKeyDown(Keys.Left)) ViewRenderer.ActiveCamera.Rotate(-0.1f, 0.0f);
+                if (input.IsKeyDown(Keys.Up)) ViewRenderer.ActiveCamera.Rotate(0.0f, -0.1f); 
+                if (input.IsKeyDown(Keys.Down)) ViewRenderer.ActiveCamera.Rotate(0.0f, 0.1f);
+            }  
 
             if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.R)) {
                 ViewRenderer.ActiveCamera.Position = new Vector3(0.0f, 0.0f, 2.0f);
@@ -115,12 +121,19 @@ public class Viewer : GameWindow {
         ImGuiIOPtr io = ImGui.GetIO();
         if (!io.WantCaptureMouse && IsFocused && e.Button == MouseButton.Button1) {
             Model? selectedModel = ViewRenderer.SelectModel(MouseState.X, MouseState.Y);
+            UIController.SetSelectedModel(selectedModel);
         }
     }
 
     protected override void OnMouseUp(MouseButtonEventArgs e) {
         base.OnMouseUp(e);
         UIController.OnMouseUp(e);
+    }
+
+    protected override void OnTextInput(TextInputEventArgs e) {
+        base.OnTextInput(e);
+
+        UIController.PressChar((char)e.Unicode);
     }
 
     private void AddModel(Model model) {

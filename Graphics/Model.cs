@@ -8,9 +8,9 @@ namespace ModelViewer.Graphics {
         public Vector3 AABBmin {get; private set;}
         public Vector3 AABBmax {get; private set;}
 
-        public Vector3 Position {get; set;}
-        public Vector3 Rotation {get; set;}
-        public Vector3 Scale {get; set;}
+        public Vector3 Position;
+        public Vector3 Rotation;
+        public Vector3 Scale;
 
         public string Name {get; private set;}
 
@@ -18,10 +18,20 @@ namespace ModelViewer.Graphics {
             Meshes = meshes;
             Name = name;
             ComputeAABB();
+            Scale = Vector3.One;
         }
 
         public Matrix4 GetModelMatrix() {
-            return Matrix4.Identity;
+            Matrix4 scale = Matrix4.CreateScale(Scale.X, Scale.Y, Scale.Z);
+            Matrix4 translation = Matrix4.CreateTranslation(Position);
+
+            Matrix4 rotationX = Matrix4.CreateRotationX(Rotation.X);
+            Matrix4 rotationY = Matrix4.CreateRotationY(Rotation.Y);
+            Matrix4 rotationZ = Matrix4.CreateRotationZ(Rotation.Z);
+
+            Matrix4 rotation = rotationY * rotationX * rotationZ;
+
+            return  scale * rotation * translation;
         }
 
         private void ComputeAABB() {

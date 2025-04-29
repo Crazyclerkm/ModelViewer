@@ -6,6 +6,7 @@ using OpenTK.Windowing.Common;
 
 using ModelViewer.Resources;
 using ModelViewer.Graphics;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace ModelViewer.UI {
     public class ImGuiController {
@@ -22,7 +23,15 @@ namespace ModelViewer.UI {
 
         private FileDialog OpenFileDialog = new();
 
-        public Action<Model>? OnModelSelected;
+        private SelectionWindow ViewSelectionWindow = new();
+
+        private Model? SelectedModel = null;
+
+        public Action<Model>? OnModelLoaded;
+
+        private Keys[] AllKeys = Enum.GetValues<Keys>();
+
+        readonly List<char> PressedChars = [];
 
         public ImGuiController(int width, int height) {
             WindowWidth = width;
@@ -40,6 +49,7 @@ namespace ModelViewer.UI {
 
             
             io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+            io.ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
 
             VAO = GL.GenVertexArray();
             VBO = GL.GenBuffer();
@@ -112,10 +122,14 @@ namespace ModelViewer.UI {
                 ImGui.OpenPopup("Open File");
             }
 
+            if (SelectedModel != null) {
+                ViewSelectionWindow.Render(SelectedModel);
+            }
+
             OpenFileDialog.Show((filePath) => {
                 Model model = ResourceManager.LoadModel((string)filePath);
 
-                OnModelSelected?.Invoke(model);
+                OnModelLoaded?.Invoke(model);
             });
 
             OpenFileDialog.Render();
@@ -193,6 +207,57 @@ namespace ModelViewer.UI {
 
         public void OnMouseUp(MouseButtonEventArgs e) {
             ImGui.GetIO().MouseDown[(int) e.Button] = false;
+        }
+
+        public void UpdateKeyboardState(KeyboardState input) {
+            var io = ImGui.GetIO();
+
+            foreach (var key in AllKeys) {
+                if (MapKey(key, out ImGuiKey imGuiKey)) {
+                    bool isDown = input.IsKeyDown(key);
+                    io.AddKeyEvent(imGuiKey, isDown);
+                }
+            }
+
+            foreach (char c in PressedChars) {
+                io.AddInputCharacter(c);
+            }
+
+            PressedChars.Clear();
+        }
+
+        private bool MapKey(Keys key, out ImGuiKey imGuiKey) {
+            if (key == Keys.Unknown) {
+                imGuiKey = ImGuiKey.None;
+                return false;
+            }
+
+            imGuiKey = key switch {
+                Keys.Escape => ImGuiKey.Escape,
+                Keys.Backspace => ImGuiKey.Backspace,
+                Keys.Enter => ImGuiKey.Enter,
+                Keys.Space => ImGuiKey.Space,
+                Keys.Tab => ImGuiKey.Tab,
+                Keys.Up => ImGuiKey.UpArrow,
+                Keys.Down => ImGuiKey.DownArrow,
+                Keys.Left => ImGuiKey.LeftArrow,
+                Keys.Right => ImGuiKey.RightArrow,
+                Keys.Delete => ImGuiKey.Delete,
+                Keys.Insert => ImGuiKey.Insert,
+                >= Keys.A and <= Keys.Z => ImGuiKey.A + (key - Keys.A),
+                >= Keys.D0 and <= Keys.D9 => ImGuiKey._0 + (key - Keys.D0),
+                _ => ImGuiKey.None
+            };
+
+            return imGuiKey != ImGuiKey.None;
+        }
+
+        internal void PressChar(char keyChar) {
+            PressedChars.Add(keyChar);
+        }
+
+        public void SetSelectedModel(Model? model) {
+            SelectedModel = model;
         }
     }
 }
