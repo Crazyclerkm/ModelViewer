@@ -15,7 +15,7 @@ public enum Texture_Type {
 public class Texture {
     public readonly int Handle;
 
-    public readonly Texture_Type type;
+    public readonly Texture_Type Type;
 
     public static Texture LoadFromFile(string filePath) {
         int handle = GL.GenTexture();

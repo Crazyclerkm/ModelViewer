@@ -2,67 +2,67 @@ using ImGuiNET;
 
 public class FileDialog {
 
-    private string currentPath = Path.Combine(Directory.GetCurrentDirectory(), "Resources");
-    private string? selectedFile = null;
-    private bool open = false;
-    private Action<string>? fileSelected;
+    private string CurrentPath = Path.Combine(Directory.GetCurrentDirectory(), "Resources");
+    private string? SelectedFile = null;
+    private bool Open = false;
+    private Action<string>? FileSelected;
 
     private readonly string[] SupportedExtensions = [
         ".obj"
     ];
 
     public void Show(Action<object> fileSelectedCallback) {
-        open = true;
-        fileSelected = fileSelectedCallback;
+        Open = true;
+        FileSelected = fileSelectedCallback;
     }
 
     public void Render() {
-        if (!open) return;
+        if (!Open) return;
 
-        if (ImGui.BeginPopupModal("Open File", ref open, ImGuiWindowFlags.AlwaysAutoResize)) {
+        if (ImGui.BeginPopupModal("Open File", ref Open, ImGuiWindowFlags.AlwaysAutoResize)) {
             ImGui.Text("Current Directory: ");
-            ImGui.TextWrapped(currentPath);
+            ImGui.TextWrapped(CurrentPath);
             ImGui.Separator();
 
-            var parentDir = Directory.GetParent(currentPath);
+            var parentDir = Directory.GetParent(CurrentPath);
 
             if (parentDir != null) {
                 if (ImGui.Selectable("..", false, ImGuiSelectableFlags.NoAutoClosePopups)) {
-                    currentPath = parentDir.FullName;
+                    CurrentPath = parentDir.FullName;
                 }
             }
 
-            foreach (string dir in Directory.GetDirectories(currentPath)) {
+            foreach (string dir in Directory.GetDirectories(CurrentPath)) {
                 string dirName = Path.GetFileName(dir);
                 if (ImGui.Selectable("["+ dirName+"]", false, ImGuiSelectableFlags.NoAutoClosePopups)) {
-                    currentPath = dir;
+                    CurrentPath = dir;
                 }
             }
 
-            foreach (string file in Directory.GetFiles(currentPath)) {
+            foreach (string file in Directory.GetFiles(CurrentPath)) {
                 string fileName = Path.GetFileName(file);
                 string extension = Path.GetExtension(file);
                 if (SupportedExtensions.Contains(extension)) {
                     if (ImGui.Selectable(fileName, false, ImGuiSelectableFlags.NoAutoClosePopups)) {
-                        selectedFile = file;
+                        SelectedFile = file;
                     }
                 }
             }
 
             ImGui.Separator();
-            ImGui.Text($"Selected: {Path.GetFileName(selectedFile) ?? "None"}");
+            ImGui.Text($"Selected: {Path.GetFileName(SelectedFile) ?? "None"}");
 
-            if (ImGui.Button("Open") && selectedFile != null) {
-                fileSelected?.Invoke(selectedFile);
-                selectedFile = null;
-                open = false;
+            if (ImGui.Button("Open") && SelectedFile != null) {
+                FileSelected?.Invoke(SelectedFile);
+                SelectedFile = null;
+                Open = false;
                 ImGui.CloseCurrentPopup();
             }
 
             ImGui.SameLine();
 
             if (ImGui.Button("Cancel")) {
-                selectedFile = null;
+                SelectedFile = null;
                 ImGui.CloseCurrentPopup();
             }
 

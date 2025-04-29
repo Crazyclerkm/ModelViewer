@@ -9,7 +9,7 @@ public class ImGuiController {
     private int VBO;
     private int EBO;
 
-    public Matrix4 projection;
+    public Matrix4 Projection;
 
     private int WindowWidth;
     private int WindowHeight;
@@ -24,7 +24,7 @@ public class ImGuiController {
 
         WindowRenderer = renderer;
 
-        projection = Matrix4.CreateOrthographicOffCenter(
+        Projection = Matrix4.CreateOrthographicOffCenter(
             0.0f, WindowWidth, WindowHeight, 0.0f, -1.0f, 1.0f
         );
 
@@ -141,7 +141,7 @@ public class ImGuiController {
         int stride = sizeof(float) * 2 + sizeof(float) * 2 + sizeof(uint);
 
         shader.Use();
-        shader.SetMatrix4("projection", projection);
+        shader.SetMatrix4("projection", Projection);
         
 
         for (int i = 0; i < drawData.CmdListsCount; i++) {
@@ -173,7 +173,7 @@ public class ImGuiController {
     public void WindowResized(int width, int height) {
         WindowWidth = width;
         WindowHeight = height;
-        projection = Matrix4.CreateOrthographicOffCenter(
+        Projection = Matrix4.CreateOrthographicOffCenter(
             0.0f, WindowWidth, WindowHeight, 0.0f, -1.0f, 1.0f
         );
     }

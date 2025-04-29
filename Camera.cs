@@ -20,7 +20,7 @@ public class Camera {
     public float Pitch = 0.0f;
     public float MovementSpeed = 4.5f;
     public float MouseSensitivity = 0.005f;
-    public float fov = MathHelper.PiOver4;
+    public float FOV = MathHelper.PiOver4;
     public float ZoomSensitivity = 4.0f;
 
     public float AspectRatio; 
@@ -53,12 +53,12 @@ public class Camera {
     }
 
     public float GetFov() {
-        return MathHelper.RadiansToDegrees(fov);
+        return MathHelper.RadiansToDegrees(FOV);
     }
 
     public void SetFov(float value) {
         var angle = MathHelper.Clamp(value, 1f, 90f);
-        fov = MathHelper.DegreesToRadians(angle);
+        FOV = MathHelper.DegreesToRadians(angle);
     }
 
     public Matrix4 GetViewMatrix() {
@@ -66,7 +66,7 @@ public class Camera {
     }
 
     public Matrix4 GetProjectionMatrix() {
-        return Matrix4.CreatePerspectiveFieldOfView(fov, AspectRatio, 0.01f, 100f);
+        return Matrix4.CreatePerspectiveFieldOfView(FOV, AspectRatio, 0.01f, 100f);
     }
 
     public void Move(CameraMovement direction, float deltaTime) {
@@ -118,10 +118,10 @@ public class Camera {
     }
 
     public void Zoom(float yOffset) {
-        fov -= MathHelper.DegreesToRadians(yOffset * ZoomSensitivity);
+        FOV -= MathHelper.DegreesToRadians(yOffset * ZoomSensitivity);
         float minFov = MathHelper.DegreesToRadians(1.0f);
-        if(fov <  minFov) fov = minFov;
-        if(fov > MathHelper.PiOver2) fov = MathHelper.PiOver2;
+        if(FOV <  minFov) FOV = minFov;
+        if(FOV > MathHelper.PiOver2) FOV = MathHelper.PiOver2;
     }
 
     private void updateCameraVectors() {

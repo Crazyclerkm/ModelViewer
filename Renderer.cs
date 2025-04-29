@@ -29,8 +29,6 @@ public class Renderer {
         Camera camera = new Camera(Vector3.UnitZ*2, width / (float)height);
         AddCamera(camera);
         ActiveCamera = camera;
-
-        AddModel(ResourceManager.LoadModel("Resources/Models/cube/cube.obj"));
     }
     
     public static void ClearScreen() {
@@ -43,17 +41,17 @@ public class Renderer {
 
     public void RenderScene() {
         ClearScreen();
-        Matrix4 projection_from_view = ActiveCamera.GetProjectionMatrix();
-        Matrix4 view_from_world = ActiveCamera.GetViewMatrix();
-        Matrix4 world_from_object;
+        Matrix4 projectionFromView = ActiveCamera.GetProjectionMatrix();
+        Matrix4 viewFromWorld = ActiveCamera.GetViewMatrix();
+        Matrix4 worldFromObject;
         
         DefaultShader.Use();
-        DefaultShader.SetMatrix4("projection_from_view", projection_from_view);
-        DefaultShader.SetMatrix4("view_from_world", view_from_world);  
+        DefaultShader.SetMatrix4("projectionFromView", projectionFromView);
+        DefaultShader.SetMatrix4("viewFromWorld", viewFromWorld);  
 
         foreach (Model model in Models) {
-            world_from_object = model.GetModelMatrix(); 
-            DefaultShader.SetMatrix4("world_from_object", world_from_object);  
+            worldFromObject = model.GetModelMatrix(); 
+            DefaultShader.SetMatrix4("worldFromObject", worldFromObject);  
 
             foreach (Mesh mesh in model.Meshes) {
                 mesh.Draw();
@@ -61,12 +59,12 @@ public class Renderer {
         }
 
         LineShader.Use();
-        LineShader.SetMatrix4("projection_from_view", projection_from_view);
-        LineShader.SetMatrix4("view_from_world", view_from_world); 
+        LineShader.SetMatrix4("projectionFromView", projectionFromView);
+        LineShader.SetMatrix4("viewFromWorld", viewFromWorld); 
        
         foreach (Raycaster ray in Rays) {
-            world_from_object = ray.GetModelMatrix();
-            LineShader.SetMatrix4("world_from_object", world_from_object);
+            worldFromObject = ray.GetModelMatrix();
+            LineShader.SetMatrix4("worldFromObject", worldFromObject);
             LineShader.SetVec3("lineColour", ray.Colour);
             ray.Draw();
         }
@@ -104,8 +102,8 @@ public class Renderer {
     }
 
     private Raycaster WorldRayFromScreenPoint(float x, float y) {
-        Matrix4 view_from_projection = ActiveCamera.GetProjectionMatrix().Transposed().Inverted();
-        Matrix4 world_from_view = ActiveCamera.GetViewMatrix().Transposed().Inverted();
+        Matrix4 viewFromProjection = ActiveCamera.GetProjectionMatrix().Transposed().Inverted();
+        Matrix4 worldFromView = ActiveCamera.GetViewMatrix().Transposed().Inverted();
 
         float ndcX = (2.0f * x / WindowWidth) - 1.0f;
         float ndcY = 1.0f - 2.0f * y / WindowHeight;
@@ -113,10 +111,10 @@ public class Renderer {
 
         Vector4 clipCoords = new Vector4(ndcX, ndcY, ndcZ, 1.0f);
 
-        Vector4 viewCoords = view_from_projection * clipCoords;
+        Vector4 viewCoords = viewFromProjection * clipCoords;
         viewCoords.W = 0.0f;
 
-        Vector4 worldCoords = world_from_view * viewCoords;
+        Vector4 worldCoords = worldFromView * viewCoords;
 
         Vector3 rayDirection = Vector3.Normalize(worldCoords.Xyz);
 

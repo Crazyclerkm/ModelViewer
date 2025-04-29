@@ -5,11 +5,11 @@ layout (location = 2) in vec2 aTexCoords;
 
 out vec2 TexCoords;
 
-uniform mat4 world_from_object;
-uniform mat4 view_from_world;
-uniform mat4 projection_from_view;
+uniform mat4 worldFromObject;
+uniform mat4 viewFromWorld;
+uniform mat4 projectionFromView;
 
 void main() {
     TexCoords = aTexCoords;    
-    gl_Position = projection_from_view * view_from_world * world_from_object * vec4(aPos, 1.0);
+    gl_Position = projectionFromView * viewFromWorld * worldFromObject * vec4(aPos, 1.0);
 }

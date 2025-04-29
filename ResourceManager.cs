@@ -2,12 +2,12 @@
 using OpenTK.Graphics.OpenGL4;
 public static class ResourceManager {
 
-    private static readonly Dictionary<string, Model> models = new();
-    private static readonly Dictionary<string, Shader> shaders = new();
-    private static readonly Dictionary<string, Texture> textures = new();
+    private static readonly Dictionary<string, Model> Models = new();
+    private static readonly Dictionary<string, Shader> Shaders = new();
+    private static readonly Dictionary<string, Texture> Textures = new();
 
     public static Model LoadModel(string filePath) {
-        if(models.TryGetValue(filePath, out Model? cachedModel)) {
+        if(Models.TryGetValue(filePath, out Model? cachedModel)) {
             return cachedModel;
         }
         
@@ -15,12 +15,12 @@ public static class ResourceManager {
         IModelImporter importer = GetImporter(extension);
 
         Model model = importer.LoadModel(filePath);
-        models[filePath] = model;
+        Models[filePath] = model;
         return model;
     }
 
     public static Shader LoadShader(string name, string vertexPath, string fragmentPath) {
-        if(shaders.TryGetValue(name, out Shader? cachedShader)) {
+        if(Shaders.TryGetValue(name, out Shader? cachedShader)) {
             return cachedShader;
         }
         
@@ -31,17 +31,17 @@ public static class ResourceManager {
 
         shader.Compile(VertexShaderSource, FragmentShaderSource);
 
-        shaders[name] = shader;
+        Shaders[name] = shader;
         return shader;
     }
 
     public static Texture LoadTexture(string filePath) {
-        if(textures.TryGetValue(filePath, out Texture? cachedTexture)) {
+        if(Textures.TryGetValue(filePath, out Texture? cachedTexture)) {
             return cachedTexture;
         }
         
         Texture texture = Texture.LoadFromFile(filePath);
-        textures[filePath] = texture;
+        Textures[filePath] = texture;
         return texture;
     }
 
@@ -53,19 +53,19 @@ public static class ResourceManager {
     }
 
     public static void Unload() {
-        foreach (Shader shader in shaders.Values) {
+        foreach (Shader shader in Shaders.Values) {
             GL.DeleteProgram(shader.GetHandle());
         }
 
-        shaders.Clear();
+        Shaders.Clear();
         
-        foreach (Texture texture in textures.Values) {
+        foreach (Texture texture in Textures.Values) {
             GL.DeleteTexture(texture.Handle);
         }
 
-        textures.Clear();
+        Textures.Clear();
 
-        models.Clear();
+        Models.Clear();
 
     }
 }
