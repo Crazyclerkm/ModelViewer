@@ -5,8 +5,12 @@ namespace ModelViewer.Graphics {
 
         public List<Mesh> Meshes;
 
-        public Vector3 AABBmin {get; private set;}
-        public Vector3 AABBmax {get; private set;}
+        private BoundingBox localAABB;
+        public BoundingBox AABB {
+            get {
+                return localAABB.ApplyTransform(GetModelMatrix());
+            }
+        }
 
         public Vector3 Position;
         public Vector3 Rotation;
@@ -17,7 +21,7 @@ namespace ModelViewer.Graphics {
         public Model(List<Mesh> meshes, string name) {
             Meshes = meshes;
             Name = name;
-            ComputeAABB();
+            localAABB = new BoundingBox([.. Meshes.SelectMany(mesh => mesh.GetVertexPositions())]);
             Scale = Vector3.One;
         }
 
@@ -32,19 +36,6 @@ namespace ModelViewer.Graphics {
             Matrix4 rotation = rotationY * rotationX * rotationZ;
 
             return  scale * rotation * translation;
-        }
-
-        private void ComputeAABB() {
-            Vector3 min = new Vector3(float.MaxValue);
-            Vector3 max = new Vector3(float.MinValue);
-
-            foreach (var mesh in Meshes) {
-                min = Vector3.ComponentMin(min, mesh.AABBmin);
-                max = Vector3.ComponentMax(max, mesh.AABBmax);
-            }
-
-            AABBmin = min;
-            AABBmax = max;
-        }
+        }   
     }
 }

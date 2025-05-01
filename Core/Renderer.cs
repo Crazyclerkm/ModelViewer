@@ -125,10 +125,10 @@ namespace ModelViewer.Core {
             float? closestDistance = null;
 
             foreach (Model model in Models) {
-                Vector3 min = model.AABBmin;
-                Vector3 max = model.AABBmax;
+                Vector3 min = model.AABB.Min;
+                Vector3 max = model.AABB.Max;
 
-                bool intersects = ray.IntersectsBoundingBox(model.AABBmin, model.AABBmax, out float distance);
+                bool intersects = ray.IntersectsBoundingBox(model.AABB.Min, model.AABB.Max, out float distance);
 
                 if (!intersects) continue;
 
@@ -139,6 +139,5 @@ namespace ModelViewer.Core {
             }
             return closestModel;
         }
-
     }
 }

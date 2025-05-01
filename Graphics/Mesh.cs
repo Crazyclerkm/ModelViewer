@@ -24,8 +24,7 @@ namespace ModelViewer.Graphics {
 
         public Material? Material;
 
-        public Vector3 AABBmin {get; private set;}
-        public Vector3 AABBmax {get; private set;}
+        public BoundingBox AABB {get; private set;}
 
         private int VAO;
         private int VBO;
@@ -37,12 +36,17 @@ namespace ModelViewer.Graphics {
             Material = material;
 
             SetupMesh();
-            ComputeAABB();
+            AABB = new BoundingBox([.. Vertices.Select(v => v.Position)]);
         }
 
         public Mesh() {
             Vertices = [];
             Indices = [];
+            AABB = new BoundingBox([.. Vertices.Select(v => v.Position)]);
+        }
+
+        public IEnumerable<Vector3> GetVertexPositions() {
+            return Vertices.Select(v => v.Position);
         }
 
         public void Draw() {
@@ -86,19 +90,6 @@ namespace ModelViewer.Graphics {
             GL.VertexAttribPointer(textureLocation, 2, VertexAttribPointerType.Float, false, Vertex.SizeInBytes, Marshal.OffsetOf<Vertex>(nameof(Vertex.TexCoords)));
 
             GL.BindVertexArray(0);
-        }
-
-        private void ComputeAABB() {
-            Vector3 min = new Vector3(float.MaxValue);
-            Vector3 max = new Vector3(float.MinValue);
-
-            foreach (var vertex in Vertices) {
-                min = Vector3.ComponentMin(min, vertex.Position);
-                max = Vector3.ComponentMax(max, vertex.Position);
-            }
-
-            AABBmin = min;
-            AABBmax = max;
         }
 
         ~Mesh() {
