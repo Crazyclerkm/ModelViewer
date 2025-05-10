@@ -56,6 +56,11 @@ namespace ModelViewer.Graphics {
             GL.Uniform1(GL.GetUniformLocation(Handle, name), data);
         }
 
+        public void SetFloat(string name, float data) {
+            GL.UseProgram(Handle);
+            GL.Uniform1(GL.GetUniformLocation(Handle, name), data);
+        }
+
         public void SetMatrix4(string name, Matrix4 data) {
             GL.UseProgram(Handle);
             GL.UniformMatrix4(GL.GetUniformLocation(Handle, name), false, ref data);

@@ -14,14 +14,16 @@ public class Viewer : GameWindow {
     private readonly Renderer ViewRenderer;
     private ImGuiController UIController;
 
+    private Scene ViewScene;
+
     public Viewer(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() {
         ClientSize = (width, height),
         Title = title
     }) { 
-        ViewRenderer = new Renderer(width, height);
-        UIController = new ImGuiController(width, height);
-
-        UIController.OnModelLoaded += AddModel;
+        ViewScene = new Scene();
+        ViewScene.ActiveCamera.AspectRatio = width / (float) height;
+        ViewRenderer = new Renderer();
+        UIController = new ImGuiController(ViewScene, width, height);
     }
 
     static void Main() {
@@ -33,7 +35,7 @@ public class Viewer : GameWindow {
     protected override void OnRenderFrame(FrameEventArgs e) {
         base.OnRenderFrame(e);
         
-        ViewRenderer.RenderScene();
+        ViewRenderer.RenderScene(ViewScene);
         UIController.RenderUI();
 
         SwapBuffers();
@@ -58,6 +60,10 @@ public class Viewer : GameWindow {
 
         ViewRenderer.ResizeViewport(e.Width, e.Height);
         UIController.WindowResized(e.Width, e.Height);
+
+        foreach (Camera camera in ViewScene.Cameras) {
+            camera.AspectRatio = e.Width / (float) e.Height;
+        }
     }
 
     private void ProcessInput(FrameEventArgs e) {
@@ -73,26 +79,30 @@ public class Viewer : GameWindow {
             if (input.IsKeyDown(Keys.Escape) && !io.WantCaptureKeyboard) Close();
 
             // Movement controls
-            if (input.IsKeyDown(Keys.W)) ViewRenderer.ActiveCamera.Move(CameraMovement.FORWARD, (float)e.Time);
-            if (input.IsKeyDown(Keys.S)) ViewRenderer.ActiveCamera.Move(CameraMovement.BACKWARD, (float)e.Time);
-            if (input.IsKeyDown(Keys.A)) ViewRenderer.ActiveCamera.Move(CameraMovement.LEFT, (float)e.Time);
-            if (input.IsKeyDown(Keys.D)) ViewRenderer.ActiveCamera.Move(CameraMovement.RIGHT, (float)e.Time);
-            if (input.IsKeyDown(Keys.Space)) ViewRenderer.ActiveCamera.Move(CameraMovement.UP, (float)e.Time);
-            if (input.IsKeyDown(Keys.LeftShift)) ViewRenderer.ActiveCamera.Move(CameraMovement.DOWN, (float)e.Time);
+            if (input.IsKeyDown(Keys.W)) ViewScene.ActiveCamera.Move(CameraMovement.FORWARD, (float)e.Time);
+            if (input.IsKeyDown(Keys.S)) ViewScene.ActiveCamera.Move(CameraMovement.BACKWARD, (float)e.Time);
+            if (input.IsKeyDown(Keys.A)) ViewScene.ActiveCamera.Move(CameraMovement.LEFT, (float)e.Time);
+            if (input.IsKeyDown(Keys.D)) ViewScene.ActiveCamera.Move(CameraMovement.RIGHT, (float)e.Time);
+            if (input.IsKeyDown(Keys.Space)) ViewScene.ActiveCamera.Move(CameraMovement.UP, (float)e.Time);
+            if (input.IsKeyDown(Keys.LeftShift)) ViewScene.ActiveCamera.Move(CameraMovement.DOWN, (float)e.Time);
 
             if (!io.WantCaptureKeyboard) {
-                if (input.IsKeyDown(Keys.Right)) ViewRenderer.ActiveCamera.Rotate(0.1f, 0.0f); 
-                if (input.IsKeyDown(Keys.Left)) ViewRenderer.ActiveCamera.Rotate(-0.1f, 0.0f);
-                if (input.IsKeyDown(Keys.Up)) ViewRenderer.ActiveCamera.Rotate(0.0f, -0.1f); 
-                if (input.IsKeyDown(Keys.Down)) ViewRenderer.ActiveCamera.Rotate(0.0f, 0.1f);
+                if (input.IsKeyDown(Keys.Right)) ViewScene.ActiveCamera.Rotate(0.1f, 0.0f); 
+                if (input.IsKeyDown(Keys.Left)) ViewScene.ActiveCamera.Rotate(-0.1f, 0.0f);
+                if (input.IsKeyDown(Keys.Up)) ViewScene.ActiveCamera.Rotate(0.0f, -0.1f); 
+                if (input.IsKeyDown(Keys.Down)) ViewScene.ActiveCamera.Rotate(0.0f, 0.1f);
             }  
 
-            if (input.IsKeyDown(Keys.LeftControl) & input.IsKeyDown(Keys.R)) {
-                ViewRenderer.ActiveCamera.Position = new Vector3(0.0f, 0.0f, 2.0f);
-                ViewRenderer.ActiveCamera.Pitch = 0.0f;
-                ViewRenderer.ActiveCamera.Yaw = -MathHelper.PiOver2;
+            if (input.IsKeyDown(Keys.LeftControl) && input.IsKeyDown(Keys.R)) {
+                ViewScene.ActiveCamera.Position = new Vector3(0.0f, 0.0f, 2.0f);
+                ViewScene.ActiveCamera.Pitch = 0.0f;
+                ViewScene.ActiveCamera.Yaw = -MathHelper.PiOver2;
 
-                ViewRenderer.ActiveCamera.Rotate(0f, 0f);
+                ViewScene.ActiveCamera.Rotate(0f, 0f);
+            }
+
+            if (input.IsKeyDown(Keys.LeftControl) && input.IsKeyPressed(Keys.L)) {
+                UIController.ToggleLightingMenu();
             }
         }
         
@@ -105,13 +115,18 @@ public class Viewer : GameWindow {
         ImGuiIOPtr io = ImGui.GetIO();
         
         if(!io.WantCaptureMouse && IsFocused && MouseState.IsButtonDown(MouseButton.Middle)) {
-            ViewRenderer.ActiveCamera.Rotate(e.DeltaX, e.DeltaY);
+            ViewScene.ActiveCamera.Rotate(e.DeltaX, e.DeltaY);
         }
     }
 
     protected override void OnMouseWheel(MouseWheelEventArgs e) {
         base.OnMouseWheel(e);
-        ViewRenderer.ActiveCamera.Zoom(e.OffsetY);
+        UIController.OnMouseWheel(e);
+
+        ImGuiIOPtr io = ImGui.GetIO();
+        if (!io.WantCaptureMouse) {
+            ViewScene.ActiveCamera.Zoom(e.OffsetY);
+        }
     }
 
     protected override void OnMouseDown(MouseButtonEventArgs e) {
@@ -120,7 +135,7 @@ public class Viewer : GameWindow {
 
         ImGuiIOPtr io = ImGui.GetIO();
         if (!io.WantCaptureMouse && IsFocused && e.Button == MouseButton.Button1) {
-            Model? selectedModel = ViewRenderer.SelectModel(MouseState.X, MouseState.Y);
+            Model? selectedModel = ViewScene.SelectModel(MouseState.X, MouseState.Y, ClientSize.X, ClientSize.Y);
             UIController.SetSelectedModel(selectedModel);
         }
     }
@@ -134,9 +149,5 @@ public class Viewer : GameWindow {
         base.OnTextInput(e);
 
         UIController.PressChar((char)e.Unicode);
-    }
-
-    private void AddModel(Model model) {
-        ViewRenderer.AddModel(model);
     }
 }

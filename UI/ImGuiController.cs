@@ -7,9 +7,12 @@ using OpenTK.Windowing.Common;
 using ModelViewer.Resources;
 using ModelViewer.Graphics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using ModelViewer.Core;
 
 namespace ModelViewer.UI {
     public class ImGuiController {
+
+        public Scene ActiveScene {get; private set;}
         private int VAO;
         private int VBO;
         private int EBO;
@@ -27,13 +30,16 @@ namespace ModelViewer.UI {
 
         private Model? SelectedModel = null;
 
-        public Action<Model>? OnModelLoaded;
+        private LightingWindow ViewLightingWindow = new();
+
+        private bool isLightingWindowActive = false;
 
         private Keys[] AllKeys = Enum.GetValues<Keys>();
 
         readonly List<char> PressedChars = [];
 
-        public ImGuiController(int width, int height) {
+        public ImGuiController(Scene scene, int width, int height) {
+            ActiveScene = scene;
             WindowWidth = width;
             WindowHeight = height;
 
@@ -126,10 +132,13 @@ namespace ModelViewer.UI {
                 ViewSelectionWindow.Render(SelectedModel);
             }
 
+            if (isLightingWindowActive) {
+                ViewLightingWindow.Render(ActiveScene.Lights);
+            }
+
             OpenFileDialog.Show((filePath) => {
                 Model model = ResourceManager.LoadModel((string)filePath);
-
-                OnModelLoaded?.Invoke(model);
+                ActiveScene.AddModel(model);
             });
 
             OpenFileDialog.Render();
@@ -209,6 +218,10 @@ namespace ModelViewer.UI {
             ImGui.GetIO().MouseDown[(int) e.Button] = false;
         }
 
+        public void OnMouseWheel(MouseWheelEventArgs e) {
+            ImGui.GetIO().MouseWheel += e.OffsetY;
+        }
+
         public void UpdateKeyboardState(KeyboardState input) {
             var io = ImGui.GetIO();
 
@@ -258,6 +271,12 @@ namespace ModelViewer.UI {
 
         public void SetSelectedModel(Model? model) {
             SelectedModel = model;
+        }
+        
+        public bool ToggleLightingMenu() {
+            isLightingWindowActive = !isLightingWindowActive;
+
+            return isLightingWindowActive;
         }
     }
 }

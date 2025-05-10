@@ -6,53 +6,78 @@ using ModelViewer.Graphics;
 
 namespace ModelViewer.Core {
     public class Renderer {
+        private const int MAX_LIGHTS = 64; 
 
-        private readonly List<Model> Models = [];
-        private readonly List<Raycaster> Rays = [];
-        private readonly List<Camera> Cameras = [];
-
-        private Shader DefaultShader = ResourceManager.LoadShader("Default", "Resources/Shaders/basicShader.vs", "Resources/Shaders/basicShader.fs");
-
+        private Shader DefaultShader = ResourceManager.LoadShader("Default", "Resources/Shaders/basicShader.vs", "Resources/Shaders/lightingShader.fs");
         private Shader LineShader = ResourceManager.LoadShader("Line", "Resources/Shaders/lineShader.vs", "Resources/Shaders/lineShader.fs");
 
-        public Camera ActiveCamera {get; private set;}
-        
-        public void AddModel(Model model) {Models.Add(model);}
-        public void AddCamera(Camera camera) {Cameras.Add(camera);}
-
-        private int WindowWidth;
-        private int WindowHeight;
-
-        public Renderer(int width, int height) {
-            WindowWidth = width;
-            WindowHeight = height;
+        public Renderer() {
             GL.ClearColor(0.1f, 0.2f, 0.2f, 1.0f);
             GL.Enable(EnableCap.DepthTest);
-        
-            Camera camera = new Camera(Vector3.UnitZ*2, width / (float)height);
-            AddCamera(camera);
-            ActiveCamera = camera;
         }
         
         public static void ClearScreen() {
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
         }
 
-        public void RenderScene() {
+        public void RenderScene(Scene scene) {
             ClearScreen();
-            Matrix4 projectionFromView = ActiveCamera.GetProjectionMatrix();
-            Matrix4 viewFromWorld = ActiveCamera.GetViewMatrix();
-            Matrix4 worldFromObject;
-            
-            DefaultShader.Use();
-            DefaultShader.SetMatrix4("projectionFromView", projectionFromView);
-            DefaultShader.SetMatrix4("viewFromWorld", viewFromWorld);  
 
-            foreach (Model model in Models) {
+            Matrix4 projectionFromView = scene.ActiveCamera.GetProjectionMatrix();
+            Matrix4 viewFromWorld = scene.ActiveCamera.GetViewMatrix();
+            Matrix4 worldFromObject;
+
+            DefaultShader.Use();
+
+            DefaultShader.SetVec3("viewPos", scene.ActiveCamera.Position);
+            DefaultShader.SetMatrix4("projectionFromView", projectionFromView);
+            DefaultShader.SetMatrix4("viewFromWorld", viewFromWorld);
+
+            IEnumerable<Light> DirLights = scene.Lights.Where(light => light.Type == LightType.DIRECTIONAL);
+            IEnumerable<Light> PointLights = scene.Lights.Where(light => light.Type == LightType.POINT);
+
+            for (int i=0; i<DirLights.Count() && i<MAX_LIGHTS; i++) {
+                DefaultShader.SetVec3($"dirLights[{i}].direction", DirLights.ElementAt(i).Direction);
+
+                DefaultShader.SetVec3($"dirLights[{i}].ambient", DirLights.ElementAt(i).Ambient);
+                DefaultShader.SetVec3($"dirLights[{i}].diffuse", DirLights.ElementAt(i).Diffuse);
+                DefaultShader.SetVec3($"dirLights[{i}].specular", DirLights.ElementAt(i).Specular);
+            }
+
+            DefaultShader.SetInt("numDirLights", DirLights.Count());
+
+            for (int i=0; i<PointLights.Count() && i<MAX_LIGHTS; i++) {
+                DefaultShader.SetVec3($"pointLights[{i}].position", PointLights.ElementAt(i).Position);
+
+                DefaultShader.SetVec3($"pointLights[{i}].ambient", PointLights.ElementAt(i).Ambient);
+                DefaultShader.SetVec3($"pointLights[{i}].diffuse", PointLights.ElementAt(i).Diffuse);
+                DefaultShader.SetVec3($"pointLights[{i}].specular", PointLights.ElementAt(i).Specular);
+
+                DefaultShader.SetFloat($"pointLights[{i}].constant", PointLights.ElementAt(i).ConstantAttenuation);
+                DefaultShader.SetFloat($"pointLights[{i}].linear", PointLights.ElementAt(i).LinearAttenuation);
+                DefaultShader.SetFloat($"pointLights[{i}].quadratic", PointLights.ElementAt(i).QuadraticAttenuation); 
+            }
+
+            DefaultShader.SetInt("numPointLights", PointLights.Count());
+
+            foreach (Model model in scene.Models) {
                 worldFromObject = model.GetModelMatrix(); 
-                DefaultShader.SetMatrix4("worldFromObject", worldFromObject);  
+                DefaultShader.SetMatrix4("worldFromObject", worldFromObject); 
 
                 foreach (Mesh mesh in model.Meshes) {
+                    if(mesh.Material != null) {
+                        DefaultShader.SetFloat("material.shininess", mesh.Material.SpecularExponent);
+
+                        if (mesh.Material.DiffuseTexture != null) {
+                            DefaultShader.SetInt("material.diffuseMap", 0);
+                            
+                        }
+
+                        if (mesh.Material.SpecularHighlightTexture != null) {
+                            DefaultShader.SetInt("material.specularMap", 2);
+                        }
+                        
+                    }
                     mesh.Draw();
                 }
             }
@@ -61,7 +86,7 @@ namespace ModelViewer.Core {
             LineShader.SetMatrix4("projectionFromView", projectionFromView);
             LineShader.SetMatrix4("viewFromWorld", viewFromWorld); 
         
-            foreach (Raycaster ray in Rays) {
+            foreach (Raycaster ray in scene.Rays) {
                 worldFromObject = ray.GetModelMatrix();
                 LineShader.SetMatrix4("worldFromObject", worldFromObject);
                 LineShader.SetVec3("lineColour", ray.Colour);
@@ -80,64 +105,10 @@ namespace ModelViewer.Core {
 
         public void ResizeViewport(int x, int y, int width, int height) {
             GL.Viewport(x, y, width, height);
-            WindowWidth = width;
-            WindowHeight = height;
-
-            foreach (var camera in Cameras) {
-                camera.AspectRatio = width / (float) height;
-            }
         }
 
         public void ResizeViewport(int width, int height) {
             ResizeViewport(0, 0, width, height);
-        }
-
-        public Model? SelectModel(float x, float y) {
-            Raycaster ray = WorldRayFromScreenPoint(x, y);
-
-            Model? closestModel = FindClosestModelFromRay(ray);
-
-            return closestModel;
-        }
-
-        private Raycaster WorldRayFromScreenPoint(float x, float y) {
-            Matrix4 viewFromProjection = ActiveCamera.GetProjectionMatrix().Transposed().Inverted();
-            Matrix4 worldFromView = ActiveCamera.GetViewMatrix().Transposed().Inverted();
-
-            float ndcX = (2.0f * x / WindowWidth) - 1.0f;
-            float ndcY = 1.0f - 2.0f * y / WindowHeight;
-            float ndcZ = 1.0f;
-
-            Vector4 clipCoords = new Vector4(ndcX, ndcY, ndcZ, 1.0f);
-
-            Vector4 viewCoords = viewFromProjection * clipCoords;
-            viewCoords.W = 0.0f;
-
-            Vector4 worldCoords = worldFromView * viewCoords;
-
-            Vector3 rayDirection = Vector3.Normalize(worldCoords.Xyz);
-
-            return new Raycaster(ActiveCamera.Position, rayDirection);
-        }
-
-        public Model? FindClosestModelFromRay(Raycaster ray) {
-            Model? closestModel = null;
-            float? closestDistance = null;
-
-            foreach (Model model in Models) {
-                Vector3 min = model.AABB.Min;
-                Vector3 max = model.AABB.Max;
-
-                bool intersects = ray.IntersectsBoundingBox(model.AABB.Min, model.AABB.Max, out float distance);
-
-                if (!intersects) continue;
-
-                if (closestDistance == null || distance < closestDistance) {
-                    closestDistance = distance;
-                    closestModel = model;
-                }
-            }
-            return closestModel;
         }
     }
 }

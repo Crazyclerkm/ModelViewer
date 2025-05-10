@@ -32,6 +32,7 @@ namespace ModelViewer.Core {
             updateCameraVectors();
         }
 
+        public Camera(Vector3 position) : this(position, 16.0f / 9.0f) {}
         public Camera(float aspectRatio) : this(new Vector3(0.0f, 0.0f, 0.0f), aspectRatio) {}
 
         public float GetPitch() {
